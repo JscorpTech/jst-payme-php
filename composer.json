@@ -1,0 +1,26 @@
+{
+    "name": "jscorptech/payme",
+    "autoload": {
+        "psr-4": {
+            "Jscorptech\\Payme\\": "src/"
+        }
+    },
+    "type": "library",
+    "authors": [
+        {
+            "name": "A'zamov Samandar",
+            "email": "JscorpTech@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "JscorpTech\\Payme\\PaymeServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "illuminate/support": "^10",
+        "runcmf/runtracy": "^0.2.10"
+    }
+}
