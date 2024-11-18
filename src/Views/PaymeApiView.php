@@ -4,6 +4,7 @@ namespace JscorpTech\Payme\Views;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use JscorpTech\Payme\Utils\Merchant;
 use JscorpTech\Payme\Exceptions\PaymeException;
@@ -86,7 +87,10 @@ class PaymeApiView
     public function CancelTransaction()
     {
         $transaction = $this->merchant->getTransaction($this->request_id, $this->params['id']);
-        if ($transaction->state == PaymeTransaction::STATE_COMPLETED) {
+        if (
+            $transaction->state == PaymeTransaction::STATE_CANCELLED or
+            $transaction->state == PaymeTransaction::STATE_CANCELLED_AFTER_COMPLETE
+        ) {
             return $this->success([
                 "transaction" => (string) $transaction->id,
                 "cancel_time" => $transaction->cancel_time,
@@ -102,8 +106,12 @@ class PaymeApiView
         $transaction->state = $state;
         $transaction->cancel_time = $time;
         $transaction->reason = $this->params['reason'];
-        $callback = config("payme.cancel_callback");
-        App::make($callback[0])->$callback[1]();
+        try {
+            $callback = config("payme.cancel_callback");
+            App::make($callback[0])->$callback[1]();
+        } catch (\Exception $e) {
+            Log::error("Payme Cancel Handler error");
+        }
         $transaction->save();
         return $this->success([
             "transaction" => (string) $transaction->id,
@@ -125,8 +133,12 @@ class PaymeApiView
         }
         $transaction->state = PaymeTransaction::STATE_COMPLETED;
         $transaction->perform_time = $time;
-        $callback = config("payme.success_callback");
-        App::make($callback[0])->$callback[1]();
+        try {
+            $callback = config("payme.success_callback");
+            App::make($callback[0])->$callback[1]();
+        } catch (\Exception $e) {
+            Log::error("Payme Success Handler error");
+        }
         $transaction->save();
         return $this->success([
             "transaction" => (string) $transaction->id,
