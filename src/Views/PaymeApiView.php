@@ -3,6 +3,7 @@
 namespace JscorpTech\Payme\Views;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Response;
 use JscorpTech\Payme\Utils\Merchant;
 use JscorpTech\Payme\Exceptions\PaymeException;
@@ -53,10 +54,19 @@ class PaymeApiView
                 case "ChangePassword":
                     return $this->ChangePassword($request);
                 default:
-                    return Response::json(["error" => "Invalid method"], 400);
+                    throw new PaymeException($this->request_id, "Method not found", PaymeException::ERROR_METHOD_NOT_FOUND);
             }
         } catch (PaymeException $e) {
             return $this->error($e);
+        } catch (\Exception $e) {
+            return Response::json([
+                "id" => $this->request_id,
+                "result" => null,
+                "error" => [
+                    "code" => PaymeException::ERROR_INTERNAL_SYSTEM,
+                    "message" => $e->getMessage()
+                ]
+            ]);
         }
     }
 
@@ -92,6 +102,8 @@ class PaymeApiView
         $transaction->state = $state;
         $transaction->cancel_time = $time;
         $transaction->reason = $this->params['reason'];
+        $callback = config("payme.cancel_callback");
+        App::make($callback[0])->$callback[1]();
         $transaction->save();
         return $this->success([
             "transaction" => (string) $transaction->id,
@@ -113,6 +125,8 @@ class PaymeApiView
         }
         $transaction->state = PaymeTransaction::STATE_COMPLETED;
         $transaction->perform_time = $time;
+        $callback = config("payme.success_callback");
+        App::make($callback[0])->$callback[1]();
         $transaction->save();
         return $this->success([
             "transaction" => (string) $transaction->id,

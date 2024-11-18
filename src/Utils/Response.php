@@ -15,7 +15,7 @@ trait Response
     }
     public function error($e)
     {
-        return Response::json([
+        return FacadesResponse::json([
             "id" => $e->request_id,
             "result" => null,
             "error" => $e->error
