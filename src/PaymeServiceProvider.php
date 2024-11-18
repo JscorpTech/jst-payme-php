@@ -9,6 +9,6 @@ class PaymeServiceProvider extends ServiceProvider
     function register() {}
     function boot()
     {
-        $this->loadMigrationsFrom(__DIR__ . "/../migrations");
+        $this->loadMigrationsFrom(__DIR__ . "/migrations");
     }
 }

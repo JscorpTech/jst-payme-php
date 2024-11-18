@@ -2,7 +2,7 @@
     "name": "jscorptech/payme",
     "autoload": {
         "psr-4": {
-            "Jscorptech\\Payme\\": "src/"
+            "JscorpTech\\Payme\\": "src/"
         }
     },
     "type": "library",
@@ -22,5 +22,6 @@
     "require": {
         "illuminate/support": "^10",
         "runcmf/runtracy": "^0.2.10"
-    }
+    },
+    "minimum-stability": "dev"
 }
