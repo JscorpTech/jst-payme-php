@@ -73,8 +73,28 @@ class PaymeApiView
 
     public function GetStatement()
     {
+        $transactions = PaymeTransaction::query()->where("time", ">=", $this->params['from'])->where("time", "<=", $this->params['to'])->get();
+        $statement = [];
+        foreach ($transactions as $transaction) {
+            $statement[] =  [
+                "id" => $transaction->transaction_id,
+                "time" => $transaction->time,
+                "amount" => $transaction->order->amount,
+                "account" => [
+                    "order_id" => $transaction->order->id
+                ],
+                "create_time" => $transaction->create_time,
+                "perform_time" => $transaction->create_time ?? 0,
+                "cancel_time" => $transaction->cancel_time ?? 0,
+                "transaction" => (string) $transaction->id,
+                "state" => $transaction->state,
+                "reason" => $transaction->reason,
+            ];
+        }
         return $this->success([
-            "detail" => "waiting!"
+            "result" => [
+                "transactions" => $statement
+            ]
         ]);
     }
     public function ChangePassword()

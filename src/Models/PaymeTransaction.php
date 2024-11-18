@@ -36,4 +36,9 @@ class PaymeTransaction extends Model
         "reason",
         "order_id"
     ];
+
+    public function order()
+    {
+        return $this->belongsTo(PaymeOrder::class);
+    }
 }
