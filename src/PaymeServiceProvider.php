@@ -1,14 +1,21 @@
 <?php
 
-namespace Jscorptech\Payme;
+namespace JscorpTech\Payme;
 
 use Illuminate\Support\ServiceProvider;
 
 class PaymeServiceProvider extends ServiceProvider
 {
-    function register() {}
-    function boot()
+    public function register()
     {
-        $this->loadMigrationsFrom(__DIR__ . "/migrations");
+        $this->publishes([
+            __DIR__ . "/../config/payme.php" => config_path("payme.php")
+        ], "config");
+    }
+    public function boot()
+    {
+        $this->loadMigrationsFrom(__DIR__ . "/../migrations");
+        $this->loadRoutesFrom(__DIR__ . "/../routes/api.php");
+        $this->mergeConfigFrom(__DIR__ . "/../config/payme.php", "payme");
     }
 }
