@@ -1,6 +1,5 @@
 <?php
 
-
 namespace JscorpTech\Payme\Utils;
 
 use Illuminate\Support\Facades\Response as FacadesResponse;

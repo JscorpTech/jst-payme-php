@@ -16,7 +16,8 @@ use JscorpTech\Payme\Utils\Time;
 
 class PaymeApiView
 {
-    use Validator, UtilsResponse;
+    use Validator;
+    use UtilsResponse;
     public $merchant;
     private string $login;
     private string $key;
@@ -77,18 +78,18 @@ class PaymeApiView
         $statement = [];
         foreach ($transactions as $transaction) {
             $statement[] =  [
-                "id" => $transaction->transaction_id,
-                "time" => $transaction->time,
-                "amount" => $transaction->order->amount,
-                "account" => [
-                    "order_id" => $transaction->order->id
+                "id"            => $transaction->transaction_id,
+                "time"          => $transaction->time,
+                "amount"        => $transaction->order->amount,
+                "account"       => [
+                    "order_id"      => $transaction->order->id
                 ],
-                "create_time" => $transaction->create_time,
-                "perform_time" => $transaction->create_time ?? 0,
-                "cancel_time" => $transaction->cancel_time ?? 0,
-                "transaction" => (string) $transaction->id,
-                "state" => $transaction->state,
-                "reason" => $transaction->reason,
+                "create_time"   => $transaction->create_time,
+                "perform_time"  => $transaction->create_time ?? 0,
+                "cancel_time"   => $transaction->cancel_time ?? 0,
+                "transaction"   => (string) $transaction->id,
+                "state"         => $transaction->state,
+                "reason"        => $transaction->reason,
             ];
         }
         return $this->success([
@@ -114,7 +115,7 @@ class PaymeApiView
             return $this->success([
                 "transaction" => (string) $transaction->id,
                 "cancel_time" => $transaction->cancel_time,
-                "state" => $transaction->state,
+                "state"       => $transaction->state,
             ]);
         }
         $time = Time::get_time();
@@ -136,7 +137,7 @@ class PaymeApiView
         return $this->success([
             "transaction" => (string) $transaction->id,
             "cancel_time" => $transaction->cancel_time,
-            "state" => $transaction->state,
+            "state"       => $transaction->state,
         ]);
     }
 
@@ -146,9 +147,9 @@ class PaymeApiView
         $transaction = $this->merchant->getTransaction($this->request_id, $this->params['id']);
         if ($transaction->state == PaymeTransaction::STATE_COMPLETED) {
             return $this->success([
-                "transaction" => (string) $transaction->id,
+                "transaction"  => (string) $transaction->id,
                 "perform_time" => $transaction->perform_time,
-                "state" => $transaction->state
+                "state"        => $transaction->state
             ]);
         }
         $transaction->state = PaymeTransaction::STATE_COMPLETED;
@@ -161,9 +162,9 @@ class PaymeApiView
         }
         $transaction->save();
         return $this->success([
-            "transaction" => (string) $transaction->id,
+            "transaction"  => (string) $transaction->id,
             "perform_time" => $transaction->perform_time,
-            "state" => $transaction->state
+            "state"        => $transaction->state
         ]);
     }
 
@@ -181,12 +182,12 @@ class PaymeApiView
     {
         $transaction = $this->merchant->getTransaction($this->request_id, $this->params['id']);
         return $this->success([
-            "create_time" => $transaction->create_time,
+            "create_time"  => $transaction->create_time,
             "perform_time" => $transaction->perform_time ?? 0,
-            "cancel_time" => $transaction->cancel_time ?? 0,
-            "transaction" => (string) $transaction->id,
-            "state" => $transaction->state,
-            "reason" => $transaction->reason
+            "cancel_time"  => $transaction->cancel_time ?? 0,
+            "transaction"  => (string) $transaction->id,
+            "state"        => $transaction->state,
+            "reason"       => $transaction->reason
         ]);
     }
 
@@ -205,10 +206,10 @@ class PaymeApiView
             $transaction = PaymeTransaction::query()->create(
                 [
                     "transaction_id" => $this->params['id'],
-                    "time" => $this->params['time'],
-                    "create_time" => $time,
-                    "order_id" => $this->params['account']['order_id'],
-                    "state" => PaymeTransaction::STATE_CREATED
+                    "time"           => $this->params['time'],
+                    "create_time"    => $time,
+                    "order_id"       => $this->params['account']['order_id'],
+                    "state"          => PaymeTransaction::STATE_CREATED
                 ]
             );
         }
@@ -216,7 +217,7 @@ class PaymeApiView
         return $this->success([
             "create_time" => $transaction->create_time,
             "transaction" => (string) $transaction->id,
-            "state" => $transaction->state
+            "state"       => $transaction->state
         ]);
     }
 }

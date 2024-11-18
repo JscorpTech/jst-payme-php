@@ -35,7 +35,8 @@ class Merchant
         return $transaction;
     }
 
-    public function CheckTransaction(int $request_id, $transaction, $transaction_id){
+    public function CheckTransaction(int $request_id, $transaction, $transaction_id)
+    {
         if (
             $transaction and
             ($transaction->state == PaymeTransaction::STATE_CREATED or

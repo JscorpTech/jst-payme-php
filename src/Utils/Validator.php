@@ -1,6 +1,5 @@
 <?php
 
-
 namespace JscorpTech\Payme\Utils;
 
 use JscorpTech\Payme\Exceptions\PaymeException;
