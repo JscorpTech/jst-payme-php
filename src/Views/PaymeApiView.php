@@ -4,7 +4,8 @@ namespace JscorpTech\Payme\Views;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
-use JscorpTech\Payme\Enums\TransactionEnum;
+use JscorpTech\Payme\Enums\ErrorEnum;
+use JscorpTech\Payme\Enums\StateEnum;
 use JscorpTech\Payme\Utils\Merchant;
 use JscorpTech\Payme\Exceptions\PaymeException;
 use JscorpTech\Payme\Models\Order;
@@ -58,7 +59,7 @@ class PaymeApiView
                 case "ChangePassword":
                     return $this->ChangePassword($request);
                 default:
-                    throw new PaymeException($this->request_id, "Method not found", TransactionEnum::ERROR_METHOD_NOT_FOUND);
+                    throw new PaymeException($this->request_id, "Method not found", ErrorEnum::METHOD_NOT_FOUND);
             }
         } catch (PaymeException $e) {
             return $this->error($e);
@@ -67,7 +68,7 @@ class PaymeApiView
                 "id" => $this->request_id,
                 "result" => null,
                 "error" => [
-                    "code" => TransactionEnum::ERROR_INTERNAL_SYSTEM,
+                    "code" => ErrorEnum::INTERNAL_SYSTEM,
                     "message" => $e->getMessage()
                 ]
             ]);
@@ -139,7 +140,7 @@ class PaymeApiView
                 "state"        => $transaction->state
             ]);
         }
-        $transaction->state = TransactionEnum::STATE_COMPLETED;
+        $transaction->state = StateEnum::COMPLETED;
         $transaction->perform_time = $this->time;
         Utils::callback(config("payme.success_callback"));
         $transaction->save();
@@ -155,7 +156,7 @@ class PaymeApiView
         $this->merchant->validateParams($this->request_id, $this->params);
         $order = Order::query()->where(['id' => $this->params['account']['order_id']]);
         if (!$order->exists() or $order->first()->state) {
-            throw new PaymeException($this->request_id, "Order not found", TransactionEnum::ERROR_INVALID_ACCOUNT);
+            throw new PaymeException($this->request_id, "Order not found", ErrorEnum::INVALID_ACCOUNT);
         }
         return $this->success(["allow" => true]);
     }
@@ -187,7 +188,7 @@ class PaymeApiView
                     "time"           => $this->params['time'],
                     "create_time"    => $time,
                     "order_id"       => $this->params['account']['order_id'],
-                    "state"          => TransactionEnum::STATE_CREATED
+                    "state"          => StateEnum::CREATED
                 ]
             );
         }

@@ -2,7 +2,7 @@
 
 namespace JscorpTech\Payme\Utils;
 
-use JscorpTech\Payme\Enums\TransactionEnum;
+use JscorpTech\Payme\Enums\StateEnum;
 
 trait Transaction
 {
@@ -13,7 +13,7 @@ trait Transaction
      */
     public function isComplete(): bool
     {
-        return $this->state === TransactionEnum::STATE_COMPLETED;
+        return $this->state === StateEnum::COMPLETED;
     }
 
     /**
@@ -35,8 +35,8 @@ trait Transaction
     public function isCancel(): bool
     {
         return in_array($this->state, [
-            TransactionEnum::STATE_CANCELLED,
-            TransactionEnum::STATE_CANCELLED_AFTER_COMPLETE
+            StateEnum::CANCELLED,
+            StateEnum::CANCELLED_AFTER_COMPLETE
         ]);
     }
 
@@ -47,8 +47,8 @@ trait Transaction
      */
     public function getCancelState(): int{
         return match ($this->state) {
-            TransactionEnum::STATE_CREATED => TransactionEnum::STATE_CANCELLED,
-            TransactionEnum::STATE_COMPLETED => TransactionEnum::STATE_CANCELLED_AFTER_COMPLETE,
+            StateEnum::CREATED => StateEnum::CANCELLED,
+            StateEnum::COMPLETED => StateEnum::CANCELLED_AFTER_COMPLETE,
             default => $this->state
         };
     }

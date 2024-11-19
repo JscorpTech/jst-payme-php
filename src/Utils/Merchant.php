@@ -2,7 +2,8 @@
 
 namespace JscorpTech\Payme\Utils;
 
-use JscorpTech\Payme\Enums\TransactionEnum;
+use JscorpTech\Payme\Enums\ErrorEnum;
+use JscorpTech\Payme\Enums\StateEnum;
 use JscorpTech\Payme\Exceptions\PaymeException;
 use JscorpTech\Payme\Models\Order;
 
@@ -20,7 +21,7 @@ class Merchant
             throw new PaymeException(
                 $request_id,
                 'Insufficient privilege to perform this method.',
-                TransactionEnum::ERROR_INSUFFICIENT_PRIVILEGE
+                ErrorEnum::INSUFFICIENT_PRIVILEGE
             );
         }
 
@@ -31,11 +32,11 @@ class Merchant
     {
         if (
             $transaction and
-            ($transaction->state == TransactionEnum::STATE_CREATED or
-                $transaction->state == TransactionEnum::STATE_COMPLETED) and
+            ($transaction->state == StateEnum::CREATED or
+                $transaction->state == StateEnum::COMPLETED) and
             $transaction->transaction_id != $transaction_id
         ) {
-            throw new PaymeException($request_id, "Unfinished transaction available", TransactionEnum::ERROR_INVALID_ACCOUNT);
+            throw new PaymeException($request_id, "Unfinished transaction available", ErrorEnum::INVALID_ACCOUNT);
         }
     }
 
@@ -48,18 +49,18 @@ class Merchant
     public function validateParams($request_id, $params): bool
     {
         if (!isset($params['account']['order_id'])) {
-            throw new PaymeException($request_id, 'Order ID is required', TransactionEnum::ERROR_INVALID_ACCOUNT);
+            throw new PaymeException($request_id, 'Order ID is required', ErrorEnum::INVALID_ACCOUNT);
         }
         if (!isset($params['amount'])) {
-            throw new PaymeException($request_id, 'Amount is required', TransactionEnum::ERROR_INVALID_AMOUNT);
+            throw new PaymeException($request_id, 'Amount is required', ErrorEnum::INVALID_AMOUNT);
         }
         $orders = Order::query()->where(['id' => $params['account']['order_id']]);
         if (!$orders->exists()) {
-            throw new PaymeException($request_id, 'Order not found', TransactionEnum::ERROR_INVALID_ACCOUNT);
+            throw new PaymeException($request_id, 'Order not found', ErrorEnum::INVALID_ACCOUNT);
         }
         $order = $orders->first();
         if ($order->amount != $params['amount']) {
-            throw new PaymeException($request_id, 'Amount mismatch', TransactionEnum::ERROR_INVALID_AMOUNT);
+            throw new PaymeException($request_id, 'Amount mismatch', ErrorEnum::INVALID_AMOUNT);
         }
         return true;
     }
