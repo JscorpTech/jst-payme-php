@@ -2,8 +2,9 @@
 
 namespace JscorpTech\Payme\Utils;
 
+use JscorpTech\Payme\Enums\TransactionEnum;
 use JscorpTech\Payme\Exceptions\PaymeException;
-use JscorpTech\Payme\Models\PaymeTransaction;
+use JscorpTech\Payme\Models\Order;
 
 class Merchant
 {
@@ -26,24 +27,40 @@ class Merchant
         return true;
     }
 
-    public function getTransaction($request_id, $id)
-    {
-        $transaction = PaymeTransaction::query()->where(['transaction_id' => $id])->first();
-        if (!$transaction) {
-            throw new PaymeException($request_id, 'Transaction not found', PaymeException::ERROR_TRANSACTION_NOT_FOUND);
-        }
-        return $transaction;
-    }
-
     public function CheckTransaction(int $request_id, $transaction, $transaction_id)
     {
         if (
             $transaction and
-            ($transaction->state == PaymeTransaction::STATE_CREATED or
-                $transaction->state == PaymeTransaction::STATE_COMPLETED) and
+            ($transaction->state == TransactionEnum::STATE_CREATED or
+                $transaction->state == TransactionEnum::STATE_COMPLETED) and
             $transaction->transaction_id != $transaction_id
         ) {
             throw new PaymeException($request_id, "Unfinished transaction available", PaymeException::ERROR_INVALID_ACCOUNT);
         }
+    }
+
+
+    /**
+     * Paymedan kelgan malumotlarni tekshirish uchun
+     * 
+     * @return bool
+     */
+    public function validateParams($request_id, $params): bool
+    {
+        if (!isset($params['account']['order_id'])) {
+            throw new PaymeException($request_id, 'Order ID is required', PaymeException::ERROR_INVALID_ACCOUNT);
+        }
+        if (!isset($params['amount'])) {
+            throw new PaymeException($request_id, 'Amount is required', PaymeException::ERROR_INVALID_AMOUNT);
+        }
+        $orders = Order::query()->where(['id' => $params['account']['order_id']]);
+        if (!$orders->exists()) {
+            throw new PaymeException($request_id, 'Order not found', PaymeException::ERROR_INVALID_ACCOUNT);
+        }
+        $order = $orders->first();
+        if ($order->amount != $params['amount']) {
+            throw new PaymeException($request_id, 'Amount mismatch', PaymeException::ERROR_INVALID_AMOUNT);
+        }
+        return true;
     }
 }

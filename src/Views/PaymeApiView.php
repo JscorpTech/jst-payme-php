@@ -3,27 +3,28 @@
 namespace JscorpTech\Payme\Views;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
+use JscorpTech\Payme\Enums\TransactionEnum;
 use JscorpTech\Payme\Utils\Merchant;
 use JscorpTech\Payme\Exceptions\PaymeException;
-use JscorpTech\Payme\Models\PaymeOrder;
-use JscorpTech\Payme\Models\PaymeTransaction;
+use JscorpTech\Payme\Models\Order;
+use JscorpTech\Payme\Models\Transaction;
 use JscorpTech\Payme\Utils\Response as UtilsResponse;
-use JscorpTech\Payme\Utils\Validator;
 use JscorpTech\Payme\Utils\Time;
+use JscorpTech\Payme\Utils\Utils;
 
 class PaymeApiView
 {
-    use Validator;
     use UtilsResponse;
+
+
     public $merchant;
     private string $login;
     private string $key;
     public int $request_id;
     public string $method;
     public array $params;
+    public int $time;
 
     public function __construct(Request $request)
     {
@@ -33,6 +34,7 @@ class PaymeApiView
         $this->merchant = new Merchant();
         $this->method = $request->input("method");
         $this->params = $request->input("params", []);
+        $this->time = Time::get_time();
     }
 
     public function __invoke(Request $request)
@@ -74,7 +76,7 @@ class PaymeApiView
 
     public function GetStatement()
     {
-        $transactions = PaymeTransaction::query()->where("time", ">=", $this->params['from'])->where("time", "<=", $this->params['to'])->get();
+        $transactions = Transaction::query()->where("time", ">=", $this->params['from'])->where("time", "<=", $this->params['to'])->get();
         $statement = [];
         foreach ($transactions as $transaction) {
             $statement[] =  [
@@ -107,32 +109,18 @@ class PaymeApiView
 
     public function CancelTransaction()
     {
-        $transaction = $this->merchant->getTransaction($this->request_id, $this->params['id']);
-        if (
-            $transaction->state == PaymeTransaction::STATE_CANCELLED or
-            $transaction->state == PaymeTransaction::STATE_CANCELLED_AFTER_COMPLETE
-        ) {
+        $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
+        if ($transaction->isCancel()) {
             return $this->success([
                 "transaction" => (string) $transaction->id,
                 "cancel_time" => $transaction->cancel_time,
                 "state"       => $transaction->state,
             ]);
         }
-        $time = Time::get_time();
-        $state = match ($transaction->state) {
-            PaymeTransaction::STATE_CREATED => PaymeTransaction::STATE_CANCELLED,
-            PaymeTransaction::STATE_COMPLETED => PaymeTransaction::STATE_CANCELLED_AFTER_COMPLETE,
-            default => $transaction->state
-        };
-        $transaction->state = $state;
-        $transaction->cancel_time = $time;
+        $transaction->state = $transaction->getCancelState();
+        $transaction->cancel_time = $this->time;
         $transaction->reason = $this->params['reason'];
-        try {
-            $callback = config("payme.cancel_callback");
-            App::make($callback[0])->$callback[1]();
-        } catch (\Exception $e) {
-            Log::error("Payme Cancel Handler error");
-        }
+        Utils::callback(config("payme.cancel_callback"));
         $transaction->save();
         return $this->success([
             "transaction" => (string) $transaction->id,
@@ -143,23 +131,17 @@ class PaymeApiView
 
     public function PerformTransaction()
     {
-        $time = Time::get_time();
-        $transaction = $this->merchant->getTransaction($this->request_id, $this->params['id']);
-        if ($transaction->state == PaymeTransaction::STATE_COMPLETED) {
+        $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
+        if ($transaction->isComplete()) {
             return $this->success([
                 "transaction"  => (string) $transaction->id,
                 "perform_time" => $transaction->perform_time,
                 "state"        => $transaction->state
             ]);
         }
-        $transaction->state = PaymeTransaction::STATE_COMPLETED;
-        $transaction->perform_time = $time;
-        try {
-            $callback = config("payme.success_callback");
-            App::make($callback[0])->$callback[1]();
-        } catch (\Exception $e) {
-            Log::error("Payme Success Handler error");
-        }
+        $transaction->state = TransactionEnum::STATE_COMPLETED;
+        $transaction->perform_time = $this->time;
+        Utils::callback(config("payme.success_callback"));
         $transaction->save();
         return $this->success([
             "transaction"  => (string) $transaction->id,
@@ -170,8 +152,8 @@ class PaymeApiView
 
     public function CheckPerformTransaction()
     {
-        $this->validate($this->request_id, $this->params);
-        $order = PaymeOrder::query()->where(['id' => $this->params['account']['order_id']]);
+        $this->merchant->validateParams($this->request_id, $this->params);
+        $order = Order::query()->where(['id' => $this->params['account']['order_id']]);
         if (!$order->exists() or $order->first()->state) {
             throw new PaymeException($this->request_id, "Order not found", PaymeException::ERROR_INVALID_ACCOUNT);
         }
@@ -180,7 +162,7 @@ class PaymeApiView
 
     public function CheckTransaction()
     {
-        $transaction = $this->merchant->getTransaction($this->request_id, $this->params['id']);
+        $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
         return $this->success([
             "create_time"  => $transaction->create_time,
             "perform_time" => $transaction->perform_time ?? 0,
@@ -193,23 +175,19 @@ class PaymeApiView
 
     public function CreateTransaction()
     {
-        $this->validate($this->request_id, $this->params);
+        $this->merchant->validateParams($this->request_id, $this->params);
         $time = Time::get_time();
-        $transaction = PaymeTransaction::query()->where(['order_id' => $this->params['account']['order_id']])->latest()->first();
+        $transaction = Transaction::query()->where(['order_id' => $this->params['account']['order_id']])->latest()->first();
         $this->merchant->CheckTransaction($this->request_id, $transaction, $this->params['id']);
 
-        if (
-            !$transaction or
-            ($transaction->state == PaymeTransaction::STATE_CANCELLED or
-                $transaction->state == PaymeTransaction::STATE_CANCELLED_AFTER_COMPLETE)
-        ) {
-            $transaction = PaymeTransaction::query()->create(
+        if (!$transaction or $transaction->isCancel()) {
+            $transaction = Transaction::query()->create(
                 [
                     "transaction_id" => $this->params['id'],
                     "time"           => $this->params['time'],
                     "create_time"    => $time,
                     "order_id"       => $this->params['account']['order_id'],
-                    "state"          => PaymeTransaction::STATE_CREATED
+                    "state"          => TransactionEnum::STATE_CREATED
                 ]
             );
         }

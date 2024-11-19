@@ -5,7 +5,7 @@ namespace JscorpTech\Payme\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class PaymeOrder extends Model
+class Order extends Model
 {
     use HasFactory;
 

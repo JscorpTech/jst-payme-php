@@ -1,14 +1,11 @@
 <?php
 
-namespace JscorpTech\Payme\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+namespace JscorpTech\Payme\Enums;
 
-class PaymeTransaction extends Model
+
+enum TransactionEnum
 {
-    use HasFactory;
-
     public const TIMEOUT = 43200000;
 
     public const STATE_CREATED                  = 1;
@@ -22,23 +19,4 @@ class PaymeTransaction extends Model
     public const REASON_CANCELLED_BY_TIMEOUT        = 4;
     public const REASON_FUND_RETURNED               = 5;
     public const REASON_UNKNOWN                     = 10;
-
-    public $table = "payme_transactions";
-
-    public $fillable = [
-        "amount",
-        "transaction_id",
-        "time",
-        "create_time",
-        "perform_time",
-        "cancel_time",
-        "state",
-        "reason",
-        "order_id"
-    ];
-
-    public function order()
-    {
-        return $this->belongsTo(PaymeOrder::class);
-    }
 }
