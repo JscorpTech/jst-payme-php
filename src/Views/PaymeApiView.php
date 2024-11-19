@@ -101,13 +101,20 @@ class PaymeApiView
             ]
         ]);
     }
+    /**
+     * Parol o'zgartirish
+     */
     public function ChangePassword()
     {
+        // TODO: implement
         return $this->success([
             "detail" => "waiting!"
         ]);
     }
 
+    /**
+     * To'lovni bekor qilish
+     */
     public function CancelTransaction()
     {
         $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
@@ -130,6 +137,9 @@ class PaymeApiView
         ]);
     }
 
+    /**
+     * To'lov yakunlandi
+     */
     public function PerformTransaction()
     {
         $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
@@ -151,6 +161,9 @@ class PaymeApiView
         ]);
     }
 
+    /**
+     * To'lov yaratish mumkunmi?
+     */
     public function CheckPerformTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
@@ -161,6 +174,9 @@ class PaymeApiView
         return $this->success(["allow" => true]);
     }
 
+    /**
+     * To'lov haqida malumo olish
+     */
     public function CheckTransaction()
     {
         $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
@@ -174,6 +190,9 @@ class PaymeApiView
         ]);
     }
 
+    /**
+     * Yangi to'lov yaratish
+     */
     public function CreateTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
