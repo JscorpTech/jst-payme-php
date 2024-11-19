@@ -4,12 +4,12 @@
 namespace JscorpTech\Payme\Enums;
 
 
-enum ReasonEnum: int
+class ReasonEnum
 {
-    case RECEIVERS_NOT_FOUND         = 1;
-    case PROCESSING_EXECUTION_FAILED = 2;
-    case EXECUTION_FAILED            = 3;
-    case CANCELLED_BY_TIMEOUT        = 4;
-    case FUND_RETURNED               = 5;
-    case UNKNOWN                     = 10;
+    const RECEIVERS_NOT_FOUND         = 1;
+    const PROCESSING_EXECUTION_FAILED = 2;
+    const EXECUTION_FAILED            = 3;
+    const CANCELLED_BY_TIMEOUT        = 4;
+    const FUND_RETURNED               = 5;
+    const UNKNOWN                     = 10;
 }

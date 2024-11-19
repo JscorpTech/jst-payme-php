@@ -177,16 +177,15 @@ class PaymeApiView
     public function CreateTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
-        $time = Time::get_time();
         $transaction = Transaction::query()->where(['order_id' => $this->params['account']['order_id']])->latest()->first();
         $this->merchant->CheckTransaction($this->request_id, $transaction, $this->params['id']);
-
+        
         if (!$transaction or $transaction->isCancel()) {
             $transaction = Transaction::query()->create(
                 [
                     "transaction_id" => $this->params['id'],
                     "time"           => $this->params['time'],
-                    "create_time"    => $time,
+                    "create_time"    => $this->time,
                     "order_id"       => $this->params['account']['order_id'],
                     "state"          => StateEnum::CREATED
                 ]

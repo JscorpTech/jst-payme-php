@@ -4,10 +4,10 @@
 namespace JscorpTech\Payme\Enums;
 
 
-enum StateEnum: int
+class StateEnum
 {
-    case CREATED                      = 1;
-    case COMPLETED                    = 2;
-    case CANCELLED                    = -1;
-    case CANCELLED_AFTER_COMPLETE     = -2;
+    const CREATED                      = 1;
+    const COMPLETED                    = 2;
+    const CANCELLED                    = -1;
+    const CANCELLED_AFTER_COMPLETE     = -2;
 }

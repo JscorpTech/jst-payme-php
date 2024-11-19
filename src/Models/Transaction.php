@@ -5,7 +5,6 @@ namespace JscorpTech\Payme\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use JscorpTech\Payme\Enums\ErrorEnum;
-use JscorpTech\Payme\Enums\TransactionEnum;
 use JscorpTech\Payme\Exceptions\PaymeException;
 use JscorpTech\Payme\Utils\Transaction as TransactionUtil;
 
