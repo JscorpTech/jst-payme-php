@@ -58,7 +58,7 @@ class PaymeApiView
                 case "ChangePassword":
                     return $this->ChangePassword($request);
                 default:
-                    throw new PaymeException($this->request_id, "Method not found", PaymeException::ERROR_METHOD_NOT_FOUND);
+                    throw new PaymeException($this->request_id, "Method not found", TransactionEnum::ERROR_METHOD_NOT_FOUND);
             }
         } catch (PaymeException $e) {
             return $this->error($e);
@@ -67,7 +67,7 @@ class PaymeApiView
                 "id" => $this->request_id,
                 "result" => null,
                 "error" => [
-                    "code" => PaymeException::ERROR_INTERNAL_SYSTEM,
+                    "code" => TransactionEnum::ERROR_INTERNAL_SYSTEM,
                     "message" => $e->getMessage()
                 ]
             ]);
@@ -155,7 +155,7 @@ class PaymeApiView
         $this->merchant->validateParams($this->request_id, $this->params);
         $order = Order::query()->where(['id' => $this->params['account']['order_id']]);
         if (!$order->exists() or $order->first()->state) {
-            throw new PaymeException($this->request_id, "Order not found", PaymeException::ERROR_INVALID_ACCOUNT);
+            throw new PaymeException($this->request_id, "Order not found", TransactionEnum::ERROR_INVALID_ACCOUNT);
         }
         return $this->success(["allow" => true]);
     }

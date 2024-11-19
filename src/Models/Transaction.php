@@ -4,6 +4,7 @@ namespace JscorpTech\Payme\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use JscorpTech\Payme\Enums\TransactionEnum;
 use JscorpTech\Payme\Exceptions\PaymeException;
 use JscorpTech\Payme\Utils\Transaction as TransactionUtil;
 
@@ -42,7 +43,7 @@ class Transaction extends Model
     {
         $transaction = static::query()->where(['transaction_id' => $id])->latest()->first();
         if (!$transaction) {
-            throw new PaymeException($request_id, 'Transaction not found', PaymeException::ERROR_TRANSACTION_NOT_FOUND);
+            throw new PaymeException($request_id, 'Transaction not found', TransactionEnum::ERROR_TRANSACTION_NOT_FOUND);
         }
         return $transaction;
     }
