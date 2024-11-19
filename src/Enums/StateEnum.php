@@ -6,8 +6,8 @@ namespace JscorpTech\Payme\Enums;
 
 class StateEnum
 {
-    const CREATED                      = 1;
-    const COMPLETED                    = 2;
-    const CANCELLED                    = -1;
-    const CANCELLED_AFTER_COMPLETE     = -2;
+    public const CREATED                      = 1;
+    public const COMPLETED                    = 2;
+    public const CANCELLED                    = -1;
+    public const CANCELLED_AFTER_COMPLETE     = -2;
 }

@@ -12,7 +12,7 @@ class Utils
         try {
             App::make($callback[0])->$callback[1]();
         } catch (\Exception $e) {
-            Log::error("Payme Success Handler error");
+            Log::error("Payme Success Handler error: $e");
         }
     }
 }
