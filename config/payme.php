@@ -14,6 +14,7 @@ return [
     "field" => Env::get("PAYME_ACCOUNT_FIELD", "order_id"),
     "order" => Order::class,
     "transaction" => Transaction::class,
+    "one_time_payment" => Env::get("PAYME_ONE_TIME_PAYMENT", True),
     "success_callback" => [Handler::class, "success"],
     "cancel_callback" => [Handler::class, "cancel"],
 ];

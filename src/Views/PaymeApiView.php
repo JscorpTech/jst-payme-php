@@ -25,6 +25,7 @@ class PaymeApiView
     public array $params;
     public int $time;
     public $order;
+    public string $field;
     public $transaction;
 
     public function __construct(Request $request)
@@ -38,6 +39,7 @@ class PaymeApiView
         $this->time = Time::get_time();
         $this->order = config("payme.order");
         $this->transaction = config("payme.transaction");
+        $this->field = config("payme.field");
     }
 
     public function __invoke(Request $request)
@@ -87,7 +89,7 @@ class PaymeApiView
                 "time"          => $transaction->time,
                 "amount"        => $transaction->order->amount,
                 "account"       => [
-                    "order_id"      => $transaction->order->id
+                    $this->field      => $transaction->order->id
                 ],
                 "create_time"   => $transaction->create_time,
                 "perform_time"  => $transaction->create_time ?? 0,
@@ -169,7 +171,7 @@ class PaymeApiView
     public function CheckPerformTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
-        $order = $this->order::query()->where(['id' => $this->params['account']['order_id']]);
+        $order = $this->order::query()->where(['id' => $this->params['account'][$this->field]]);
         if (!$order->exists() or $order->first()->state) {
             throw new PaymeException($this->request_id, "Order not found", ErrorEnum::INVALID_ACCOUNT);
         }
@@ -198,17 +200,18 @@ class PaymeApiView
     public function CreateTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
-        $transaction = $this->transaction::query()->where(['order_id' => $this->params['account']['order_id']])->latest()->first();
-        $this->merchant->CheckTransaction($this->request_id, $transaction, $this->params['id']);
-        
-        if (!$transaction or $transaction->isCancel()) {
+        $transaction = $this->transaction::query()->where(['order_id' => $this->params['account'][$this->field]])->latest()->first();
+        if (config("payme.one_time_payment")) {
+            $this->merchant->CheckTransaction($this->request_id, $transaction, $this->params['id']);
+        }
+        if (!$transaction or $transaction->isCancel() or $transaction->transaction_id != $this->params['id']) {
             $transaction = $this->transaction::query()->create(
                 [
                     "transaction_id" => $this->params['id'],
                     "time"           => $this->params['time'],
                     "create_time"    => $this->time,
                     "amount"         => $this->params['amount'],
-                    "order_id"       => $this->params['account']['order_id'],
+                    "order_id"       => $this->params['account'][$this->field],
                     "state"          => StateEnum::CREATED
                 ]
             );
