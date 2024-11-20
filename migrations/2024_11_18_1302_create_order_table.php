@@ -11,6 +11,7 @@ return new class () extends Migration {
             $table->id();
             $table->bigInteger("amount");
             $table->boolean("state")->default(0);
+            $table->timestamps();
         });
     }
 

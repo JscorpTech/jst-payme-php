@@ -5,7 +5,6 @@ namespace JscorpTech\Payme\Utils;
 use JscorpTech\Payme\Enums\ErrorEnum;
 use JscorpTech\Payme\Enums\StateEnum;
 use JscorpTech\Payme\Exceptions\PaymeException;
-use JscorpTech\Payme\Models\Order;
 
 class Merchant
 {
@@ -48,18 +47,18 @@ class Merchant
      */
     public function validateParams($request_id, $params): bool
     {
-        if (!isset($params['account']['order_id'])) {
+        if (!isset($params['account'][config("payme.field")])) {
             throw new PaymeException($request_id, 'Order ID is required', ErrorEnum::INVALID_ACCOUNT);
         }
         if (!isset($params['amount'])) {
             throw new PaymeException($request_id, 'Amount is required', ErrorEnum::INVALID_AMOUNT);
         }
-        $orders = Order::query()->where(['id' => $params['account']['order_id']]);
+        $orders = config("payme.order")::query()->where(['id' => $params['account'][config("payme.field")]]);
         if (!$orders->exists()) {
             throw new PaymeException($request_id, 'Order not found', ErrorEnum::INVALID_ACCOUNT);
         }
         $order = $orders->first();
-        if ($order->amount != $params['amount']) {
+        if ($order->{config("payme.amount")} != $params['amount']) {
             throw new PaymeException($request_id, 'Amount mismatch', ErrorEnum::INVALID_AMOUNT);
         }
         return true;

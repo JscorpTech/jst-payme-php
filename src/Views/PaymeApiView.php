@@ -8,8 +8,6 @@ use JscorpTech\Payme\Enums\ErrorEnum;
 use JscorpTech\Payme\Enums\StateEnum;
 use JscorpTech\Payme\Utils\Merchant;
 use JscorpTech\Payme\Exceptions\PaymeException;
-use JscorpTech\Payme\Models\Order;
-use JscorpTech\Payme\Models\Transaction;
 use JscorpTech\Payme\Utils\Response as UtilsResponse;
 use JscorpTech\Payme\Utils\Time;
 use JscorpTech\Payme\Utils\Utils;
@@ -26,6 +24,8 @@ class PaymeApiView
     public string $method;
     public array $params;
     public int $time;
+    public $order;
+    public $transaction;
 
     public function __construct(Request $request)
     {
@@ -36,6 +36,8 @@ class PaymeApiView
         $this->method = $request->input("method");
         $this->params = $request->input("params", []);
         $this->time = Time::get_time();
+        $this->order = config("payme.order");
+        $this->transaction = config("payme.transaction");
     }
 
     public function __invoke(Request $request)
@@ -77,7 +79,7 @@ class PaymeApiView
 
     public function GetStatement()
     {
-        $transactions = Transaction::query()->where("time", ">=", $this->params['from'])->where("time", "<=", $this->params['to'])->get();
+        $transactions = $this->transaction::query()->where("time", ">=", $this->params['from'])->where("time", "<=", $this->params['to'])->get();
         $statement = [];
         foreach ($transactions as $transaction) {
             $statement[] =  [
@@ -117,7 +119,7 @@ class PaymeApiView
      */
     public function CancelTransaction()
     {
-        $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
+        $transaction = $this->transaction::getTransaction($this->request_id, $this->params['id']);
         if ($transaction->isCancel()) {
             return $this->success([
                 "transaction" => (string) $transaction->id,
@@ -128,7 +130,7 @@ class PaymeApiView
         $transaction->state = $transaction->getCancelState();
         $transaction->cancel_time = $this->time;
         $transaction->reason = $this->params['reason'];
-        Utils::callback(config("payme.cancel_callback"));
+        Utils::callback(config("payme.cancel_callback"), $transaction);
         $transaction->save();
         return $this->success([
             "transaction" => (string) $transaction->id,
@@ -142,7 +144,7 @@ class PaymeApiView
      */
     public function PerformTransaction()
     {
-        $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
+        $transaction = $this->transaction::getTransaction($this->request_id, $this->params['id']);
         if ($transaction->isComplete()) {
             return $this->success([
                 "transaction"  => (string) $transaction->id,
@@ -152,7 +154,7 @@ class PaymeApiView
         }
         $transaction->state = StateEnum::COMPLETED;
         $transaction->perform_time = $this->time;
-        Utils::callback(config("payme.success_callback"));
+        Utils::callback(config("payme.success_callback"), $transaction);
         $transaction->save();
         return $this->success([
             "transaction"  => (string) $transaction->id,
@@ -167,7 +169,7 @@ class PaymeApiView
     public function CheckPerformTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
-        $order = Order::query()->where(['id' => $this->params['account']['order_id']]);
+        $order = $this->order::query()->where(['id' => $this->params['account']['order_id']]);
         if (!$order->exists() or $order->first()->state) {
             throw new PaymeException($this->request_id, "Order not found", ErrorEnum::INVALID_ACCOUNT);
         }
@@ -179,7 +181,7 @@ class PaymeApiView
      */
     public function CheckTransaction()
     {
-        $transaction = Transaction::getTransaction($this->request_id, $this->params['id']);
+        $transaction = $this->transaction::getTransaction($this->request_id, $this->params['id']);
         return $this->success([
             "create_time"  => $transaction->create_time,
             "perform_time" => $transaction->perform_time ?? 0,
@@ -196,15 +198,16 @@ class PaymeApiView
     public function CreateTransaction()
     {
         $this->merchant->validateParams($this->request_id, $this->params);
-        $transaction = Transaction::query()->where(['order_id' => $this->params['account']['order_id']])->latest()->first();
+        $transaction = $this->transaction::query()->where(['order_id' => $this->params['account']['order_id']])->latest()->first();
         $this->merchant->CheckTransaction($this->request_id, $transaction, $this->params['id']);
         
         if (!$transaction or $transaction->isCancel()) {
-            $transaction = Transaction::query()->create(
+            $transaction = $this->transaction::query()->create(
                 [
                     "transaction_id" => $this->params['id'],
                     "time"           => $this->params['time'],
                     "create_time"    => $this->time,
+                    "amount"         => $this->params['amount'],
                     "order_id"       => $this->params['account']['order_id'],
                     "state"          => StateEnum::CREATED
                 ]

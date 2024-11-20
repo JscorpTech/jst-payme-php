@@ -24,7 +24,7 @@ trait Transaction
      */
     public function validateAmount(float $expectedAmount): bool
     {
-        return $this->amount === $expectedAmount;
+        return $this->{config("payme.amount")} === $expectedAmount;
     }
 
     /**

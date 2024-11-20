@@ -2,17 +2,16 @@
 
 namespace JscorpTech\Payme\Utils;
 
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 
 class Utils
 {
-    public static function callback($callback)
+    public static function callback($callback, $data = null)
     {
         try {
-            App::make($callback[0])->$callback[1]();
+            call_user_func($callback, $data);
         } catch (\Exception $e) {
-            Log::error("Payme Success Handler error: $e");
+            Log::error("Payme Handler error: ".$e->getMessage(). ' : '.$e->getLine(). " : ".$e->getFile());
         }
     }
 }
